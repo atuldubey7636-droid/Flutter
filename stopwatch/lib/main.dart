@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
       
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const StopWatchExample(),
+      home: const StopwatchExample(),
     );
   }
 }

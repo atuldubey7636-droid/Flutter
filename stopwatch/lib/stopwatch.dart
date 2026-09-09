@@ -1,99 +1,158 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-class StopWatchExample extends StatefulWidget {
-  const StopWatchExample({super.key});
-
+class StopwatchExample extends StatefulWidget {
+  const StopwatchExample({super.key});
   @override
-  State<StopWatchExample> createState() => _StopWatchExampleState();
+  State<StopwatchExample> createState() => _StopwatchExampleState();
 }
 
-class _StopWatchExampleState extends State<StopWatchExample> {
-  int seconds = 0;
-  late Timer timer;
+class _StopwatchExampleState extends State<StopwatchExample> {
+  Timer? timer;
   bool isRunning = false;
+  int milliseconds = 0;
+  final List<int> laps = <int>[];
 
-
-@override
+  @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    timer = Timer.periodic(Duration(seconds: 1), _onTick);
   }
 
   @override
-  void dispose(){
-    timer.cancel();
+  void dispose() {
+    timer?.cancel();
     super.dispose();
   }
 
-  void _onTick(Timer timer){
+  void _onTick(Timer timer) {
     setState(() {
-      if (isRunning){
-        seconds++;
+      if (isRunning) {
+        milliseconds += 100;
       }
     });
   }
 
-  void _startTimer(){
+  void _startTimer() {
+    if (isRunning) {
+      return;
+    }
+
+    timer ??= Timer.periodic(const Duration(milliseconds: 100), _onTick);
     setState(() {
       isRunning = true;
     });
   }
 
+  void _lapTimer() {
+    if (!isRunning) {
+      return;
+    }
 
-  void _stopTimer(){
+    setState(() {
+      laps.add(milliseconds);
+    });
+  }
+  void _clearTimer() {
+    timer?.cancel();
+    timer = null;
     setState(() {
       isRunning = false;
+      milliseconds = 0;
+      laps.clear();
     });
   }
 
+ 
 
-  String _secondToText() => seconds == 1 ? "1 second" : "$seconds seconds";
+  // ignore: strict_top_level_inference
+  String _millisToSeconds(milis) {
+    final totalMilliseconds = milis as int;
+    final minutes = totalMilliseconds ~/ 60000;
+    final seconds = (totalMilliseconds % 60000) ~/ 1000;
+    final hundredths = (totalMilliseconds % 1000) ~/ 10;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.${hundredths.toString().padLeft(2, '0')}';
 
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Stopwatch example"),
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Center(
-            child: Text(
-            _secondToText(),
-            style: Theme.of(context).textTheme.headlineLarge,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(mainAxisAlignment: MainAxisAlignment.center, 
+        appBar: AppBar(
+          title: const Text('Stopwatch Example'),
+        ),
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            ElevatedButton(
-              onPressed: _startTimer,
-              style: ButtonStyle(
-                backgroundColor: 
-                  MaterialStateProperty.all<Color>(Colors.green),
-                  foregroundColor: 
-                    MaterialStateProperty.all<Color>(Colors.white),
+            const SizedBox(height: 32),
+            Center(
+              child: Text(
+                _millisToSeconds(milliseconds),
+                style: const TextStyle(fontSize: 30),
               ),
-              child: const Text("Start"),
             ),
-            const SizedBox(width: 20,),
-            ElevatedButton(
-              onPressed: _stopTimer,
-              style: ButtonStyle(
-                backgroundColor: 
-                  MaterialStateProperty.all<Color>(Colors.red),
-                  foregroundColor: 
-                    MaterialStateProperty.all<Color>(Colors.white),
+            const SizedBox(height: 20),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              ElevatedButton(
+                onPressed: isRunning ? null : _startTimer,
+                style: ButtonStyle(
+                  backgroundColor:
+                      WidgetStateProperty.all<Color>(Colors.green),
+                  foregroundColor:
+                      WidgetStateProperty.all<Color>(Colors.white),
+                ),
+                child: const Text('Start'),
               ),
-              child: const Text("Stop"),
-            )
-          ],)
-
-        ],
-      ),
-    );
+              ElevatedButton(
+                onPressed: isRunning ? _lapTimer : null,
+                style: ButtonStyle(
+                  backgroundColor:
+                      WidgetStateProperty.all<Color>(Colors.orange),
+                  foregroundColor:
+                      WidgetStateProperty.all<Color>(Colors.white),
+                ),
+                child: const Text('Lap'),
+              ),
+              ElevatedButton(
+                onPressed: isRunning ? null : _clearTimer,
+                style: ButtonStyle(
+                  backgroundColor:
+                      WidgetStateProperty.all<Color>(Colors.blue),
+                  foregroundColor:
+                      WidgetStateProperty.all<Color>(Colors.white),
+                ),
+                child: const Text('Clear'),
+              ),
+              
+            ]),
+            const SizedBox(height: 24),
+            Expanded(
+              child: laps.isEmpty
+                  ? const Center(child: Text('No laps recorded yet'))
+                  : ListView.separated(
+                      itemCount: laps.length,
+                      separatorBuilder: (context, index) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final lapTime = laps[index];
+                        return ListTile(
+                          leading: Text('Lap ${index + 1}'),
+                          trailing: Text(_millisToSeconds(lapTime)),
+                        );
+                      },
+                    ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: ElevatedButton(
+                onPressed: _clearTimer,
+                style: ButtonStyle(
+                  backgroundColor:
+                      WidgetStateProperty.all<Color>(Colors.blue),
+                  foregroundColor:
+                      WidgetStateProperty.all<Color>(Colors.white),
+                ),
+                child: const Text('Clear'),
+              ),
+            ),
+          ],
+        ));
   }
 }
